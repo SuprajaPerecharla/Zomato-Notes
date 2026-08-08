@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+*.db
+*.db-shm
+*.db-wal
+.env
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# macOS
+.DS_Store
+
+# Editor
+.idea/
+.vscode/
+*.swp
