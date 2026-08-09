@@ -1,20 +1,11 @@
-# Core API
 fastapi>=0.111.0
 uvicorn[standard]>=0.29.0
-python-multipart>=0.0.9
-
-# Database
 sqlalchemy>=2.0.30
-
-# Validation — use --pre on Python 3.14 until pydantic 2.x has a stable 3.14 wheel
 pydantic>=2.7.1
 pydantic-settings>=2.2.1
-
-# Utilities
 python-dotenv>=1.0.1
 httpx>=0.27.0
-
-# AI / ML — optional; app degrades gracefully if unavailable
+python-multipart>=0.0.9
 openai>=1.30.1
 sentence-transformers>=3.0.1
 numpy>=1.26.4

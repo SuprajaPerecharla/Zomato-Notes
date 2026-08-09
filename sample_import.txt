@@ -1,0 +1,10 @@
+Payment service latency spike — DB pool exhaustion
+Redis cache miss storm after CDN config flush
+Order service OOM kill loop — unbounded LRU cache
+SMS OTP delivery failure — Twilio gateway degraded
+API rate limiting misconfiguration — wrong burst value
+Database migration caused 40-minute table lock
+Kubernetes node autoscaler stuck — EC2 capacity unavailable
+SSL certificate expiry warning — payments domain
+Search ranking model stale — new restaurants not appearing
+PII data leak in error logs — payment service

@@ -1,19 +1,215 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Zomato Notes — On-Call Knowledge Base</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
-      rel="stylesheet"
-    />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zomato Notes</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23e8430a'/><text x='16' y='22' text-anchor='middle' font-size='18' font-family='sans-serif' fill='white' font-weight='bold'>Z</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .tag-badge { display:inline-flex;align-items:center;padding:.2rem .55rem;border-radius:20px;font-size:.72rem;font-weight:600;letter-spacing:.03em; }
+    .tag-btn { flex:1;min-width:70px;padding:.4rem;border-radius:6px;font-size:.78rem;font-weight:600;border:1px solid var(--border);cursor:pointer;background:var(--bg3);color:var(--muted);transition:all .15s; }
+    .tag-btn:hover { border-color:var(--muted);color:var(--text); }
+    .tag-row { display:flex;gap:.5rem;flex-wrap:wrap; }
+    .tag-stat-item { display:flex;align-items:center;justify-content:space-between;padding:.3rem .5rem;border-radius:6px;background:var(--bg3); }
+    .tag-stat-count { font-size:.8rem;font-weight:700;color:var(--muted); }
+    .tag-stats-grid { display:flex;flex-direction:column;gap:.35rem;margin-top:.5rem; }
+  </style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <div class="navbar-logo">Z</div>
+      <span>Zomato Notes</span>
+    </div>
+    <div class="navbar-search">
+      <span class="search-icon">⌕</span>
+      <input type="search" id="navbar-search" placeholder="Search notes… (Enter)" autocomplete="off" />
+    </div>
+    <div class="navbar-actions">
+      <button class="btn btn-secondary btn-sm" id="btn-bulk-import">⇪ Import</button>
+      <button class="btn btn-primary btn-sm"   id="btn-new-note">+ New Note</button>
+    </div>
+  </nav>
+
+  <div class="page-body">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-section-title">Navigate</div>
+      <button class="sidebar-link active" data-view="view-dashboard"><span class="icon">⊞</span>Dashboard</button>
+      <button class="sidebar-link" data-view="view-notes"><span class="icon">☰</span>All Notes</button>
+      <button class="sidebar-link" data-view="view-search"><span class="icon">⌕</span>Smart Search</button>
+      <button class="sidebar-link" data-view="view-ai"><span class="icon">✦</span>AI Tools</button>
+
+      <div class="sidebar-section-title" style="margin-top:.75rem">Tags</div>
+      <div id="sidebar-tags"></div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main-content">
+
+      <!-- ── DASHBOARD ──────────────────────────────────────── -->
+      <div id="view-dashboard" class="view active">
+        <div class="page-header">
+          <h1 class="page-title">Dashboard</h1>
+          <button class="btn btn-primary btn-sm" onclick="openEditor()">+ New Note</button>
+        </div>
+
+        <div class="stats-grid">
+          <div class="card stat-card">
+            <div class="stat-num" id="stat-total">—</div>
+            <div class="stat-label">Total Notes</div>
+          </div>
+          <div class="card" style="padding:1rem">
+            <div class="section-title">Notes by Tag</div>
+            <div class="tag-stats-grid" id="stat-by-tag"></div>
+          </div>
+        </div>
+
+        <div class="section-title" style="margin-top:1.25rem">Recent Notes</div>
+        <div class="notes-list" id="notes-list-main"></div>
+      </div>
+
+      <!-- ── ALL NOTES ──────────────────────────────────────── -->
+      <div id="view-notes" class="view">
+        <div class="page-header">
+          <h1 class="page-title" id="notes-view-title">All Notes</h1>
+          <button class="btn btn-primary btn-sm" onclick="openEditor()">+ New Note</button>
+        </div>
+        <div class="filter-row">
+          <label class="text-muted text-sm">Filter by tag:</label>
+          <select class="form-select" id="filter-tag" style="width:auto;padding:.3rem .6rem">
+            <option value="">All tags</option>
+            <option value="work">work</option>
+            <option value="health">health</option>
+            <option value="recipes">recipes</option>
+            <option value="travel">travel</option>
+            <option value="random">random</option>
+          </select>
+        </div>
+        <div class="notes-list" id="notes-list-view"></div>
+      </div>
+
+      <!-- ── SEARCH ─────────────────────────────────────────── -->
+      <div id="view-search" class="view">
+        <div class="page-header"><h1 class="page-title">Smart Search</h1></div>
+        <div style="display:flex;gap:.5rem;margin-bottom:.75rem">
+          <input type="search" id="search-input" class="form-input" placeholder="Search notes…" autocomplete="off" style="max-width:480px" />
+          <button class="btn btn-primary" id="btn-search-go">Search</button>
+        </div>
+        <div class="mode-tabs">
+          <button class="mode-tab active" data-mode="keyword">≡ Keyword</button>
+          <button class="mode-tab" data-mode="semantic">◉ Semantic</button>
+          <button class="mode-tab" data-mode="auto">⚡ Auto</button>
+        </div>
+        <p id="search-status" class="text-muted text-sm" style="margin-bottom:.75rem"></p>
+        <div class="notes-list" id="search-results-list"></div>
+      </div>
+
+      <!-- ── NOTE DETAIL ────────────────────────────────────── -->
+      <div id="view-detail" class="view"></div>
+
+      <!-- ── AI TOOLS ───────────────────────────────────────── -->
+      <div id="view-ai" class="view">
+        <div class="page-header"><h1 class="page-title">✦ AI Tools</h1></div>
+        <p class="text-muted text-sm" style="margin-bottom:1.25rem">
+          Requires <code>OPENAI_API_KEY</code> in <code>backend/.env</code>.
+        </p>
+
+        <div class="card" style="max-width:580px;margin-bottom:1rem">
+          <div class="section-title">Tag Classifier</div>
+          <p class="text-muted text-sm" style="margin-bottom:.75rem">Predict the best tag for any note text.</p>
+          <div class="form-group">
+            <label class="form-label">Title</label>
+            <input type="text" id="classify-title" class="form-input" placeholder="Note title" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Content</label>
+            <textarea id="classify-content" class="form-textarea" rows="4" placeholder="Note content…"></textarea>
+          </div>
+          <button class="btn btn-primary btn-sm" id="btn-classify">✦ Classify</button>
+          <div id="classify-result" class="ai-result" style="margin-top:.75rem"></div>
+        </div>
+
+        <div class="card" style="max-width:580px">
+          <div class="section-title">Per-Note AI Features</div>
+          <ul class="text-muted text-sm" style="padding-left:1.2rem;line-height:2.2">
+            <li><strong>Ask AI</strong> — open a note → 🤖 Ask AI</li>
+            <li><strong>Auto-tag</strong> — open a note → ✨ Auto-tag</li>
+            <li><strong>Summarise</strong> — open a note → 📝 Summarise</li>
+            <li><strong>Next Action</strong> — open a note → 🛠 Next Action</li>
+          </ul>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- ── Note editor modal ─────────────────────────────────────── -->
+<div class="modal-overlay hidden" id="modal-editor">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="editor-title-label">New Note</span>
+      <button class="modal-close" id="modal-editor-close">✕</button>
+    </div>
+    <input type="hidden" id="editor-note-id" />
+
+    <div class="form-group">
+      <label class="form-label">Title</label>
+      <input type="text" id="editor-title" class="form-input" placeholder="Note title" maxlength="256" />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Tag</label>
+      <div class="tag-row">
+        <button class="tag-btn active" data-tag="work">work</button>
+        <button class="tag-btn" data-tag="health">health</button>
+        <button class="tag-btn" data-tag="recipes">recipes</button>
+        <button class="tag-btn" data-tag="travel">travel</button>
+        <button class="tag-btn" data-tag="random">random</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Content</label>
+      <textarea id="editor-content" class="form-textarea" rows="7"
+                placeholder="Write your note content…"></textarea>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="btn-editor-cancel">Cancel</button>
+      <button class="btn btn-primary"   id="btn-editor-save">Save Note</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Bulk import modal ─────────────────────────────────────── -->
+<div class="modal-overlay hidden" id="modal-bulk">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Bulk Import</span>
+      <button class="modal-close" id="btn-bulk-close">✕</button>
+    </div>
+    <p class="text-muted text-sm" style="margin-bottom:.75rem">One note title per line. All imported as tag "work".</p>
+    <textarea id="bulk-text" class="form-textarea" rows="10" placeholder="Standup Summary&#10;Sprint Retro Notes&#10;Morning Run&#10;…"></textarea>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="document.getElementById('modal-bulk').classList.add('hidden')">Cancel</button>
+      <button class="btn btn-primary" id="btn-bulk-run">Import</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+<script src="mock-data.js"></script>
+<script src="script.js"></script>
+</body>
 </html>
